@@ -1,76 +1,76 @@
 # EdgeRareClip
 
-EdgeRareClip là nền tảng phát hiện bất thường trên thiết bị biên (edge), hướng tới các bài toán thị giác máy tính trong công nghiệp. Hệ thống đưa suy luận đến gần camera và thiết bị sản xuất, giảm độ trễ, giảm lưu lượng dữ liệu truyền về trung tâm và vẫn duy trì khả năng giám sát tập trung.
+EdgeRareClip is an edge-first anomaly detection platform for industrial computer vision. It brings inference closer to cameras and production equipment to reduce latency and upstream traffic while preserving centralized monitoring and fleet management.
 
-> **Trạng thái:** repository hiện đang ở giai đoạn khởi tạo kiến trúc. Các module đã có skeleton và hợp đồng tích hợp ban đầu; model TensorRT, business logic, database schema và dashboard sẽ được triển khai theo từng milestone.
+> **Status:** The repository is currently in the architecture bootstrap phase. It contains the initial module layout and integration contracts. The production TensorRT models, business logic, database schema, and dashboard behavior will be delivered incrementally.
 
-## Mục tiêu kỹ thuật
+## Technical Goals
 
-- Suy luận anomaly theo thời gian gần thực trên Jetson Nano bằng TensorRT.
-- Ước lượng độ hiếm (rarity-aware) và cập nhật memory bank trực tuyến.
-- Gửi sự kiện qua MQTT, đệm cục bộ khi mất mạng và đồng bộ lại khi kết nối phục hồi.
-- Cung cấp API FastAPI cho anomaly, device health, feedback và metrics.
-- Hiển thị anomaly feed, heatmap, tình trạng thiết bị và chỉ số vận hành trên dashboard React.
-- Chuẩn hóa model dữ liệu, cấu hình, logging và metrics trong package `shared/`.
+- Run near-real-time anomaly inference on Jetson Nano with TensorRT.
+- Estimate visual rarity and update an online memory bank.
+- Publish events through MQTT, buffer them locally during outages, and synchronize after recovery.
+- Provide a FastAPI service for anomalies, device health, feedback, and metrics.
+- Expose an operational React dashboard with anomaly feeds, heatmaps, device health, and performance indicators.
+- Share data models, configuration, logging, metrics, and utilities through `shared/`.
 
-## Kiến trúc tổng quan
+## Architecture
 
 ```text
 Camera -> Edge capture/preprocess -> TensorRT inference -> Postprocess
-						      |
-				  Local SQLite buffer <- MQTT -> Backend
-									|
-				      PostgreSQL <- Services/API <- WebSocket
-									|
-								React Dashboard
+                                                |
+                              Local SQLite buffer <- MQTT -> Backend
+                                                               |
+                                  PostgreSQL <- Services/API <- WebSocket
+                                                               |
+                                                        React Dashboard
 ```
 
-### Các thành phần
+### Components
 
-| Thành phần | Vai trò | Công nghệ chính |
+| Component | Responsibility | Primary technologies |
 | --- | --- | --- |
-| `edge/` | Capture, tiền xử lý, suy luận và health heartbeat trên Jetson | Python, OpenCV/GStreamer, TensorRT, MQTT |
-| `backend/` | API, xử lý nghiệp vụ, lưu trữ anomaly và quản lý fleet | FastAPI, SQLAlchemy async, PostgreSQL |
-| `frontend/` | Dashboard giám sát và cấu hình | React, TypeScript, Vite, Zustand |
-| `shared/` | Pydantic models, config, logging, metrics và utilities dùng chung | Python |
-| `infra/` | MQTT broker, Prometheus, Grafana và script triển khai | Docker, Prometheus, Grafana |
+| `edge/` | Camera capture, preprocessing, inference, and health heartbeat on Jetson | Python, OpenCV/GStreamer, TensorRT, MQTT |
+| `backend/` | API, business services, anomaly persistence, and fleet management | FastAPI, async SQLAlchemy, PostgreSQL |
+| `frontend/` | Monitoring and configuration dashboard | React, TypeScript, Vite, Zustand |
+| `shared/` | Shared Pydantic models, configuration, logging, metrics, and utilities | Python |
+| `infra/` | MQTT broker, Prometheus, Grafana, and deployment scripts | Docker, Prometheus, Grafana |
 
-## Cấu trúc repository
+## Repository Layout
 
-- `shared/`: package Python dùng chung giữa edge và backend.
-- `edge/`: pipeline chạy trên Jetson Nano; model engine nằm trong `edge/models/`.
-- `backend/`: FastAPI server, MQTT subscriber, services và migrations.
-- `frontend/`: dashboard React.
-- `infra/`: cấu hình quan sát hệ thống và triển khai.
-- `docs/`: [kiến trúc](docs/architecture.md), [API](docs/api_reference.md) và [hướng dẫn triển khai](docs/deployment_guide.md).
+- `shared/`: Python package shared by the edge and backend applications.
+- `edge/`: Jetson Nano pipeline; TensorRT engines are stored in `edge/models/`.
+- `backend/`: FastAPI server, MQTT subscriber, services, and migrations.
+- `frontend/`: React dashboard.
+- `infra/`: Observability and deployment configuration.
+- `docs/`: [architecture](docs/architecture.md), [API reference](docs/api_reference.md), and [deployment guide](docs/deployment_guide.md).
 
-## Yêu cầu môi trường
+## Prerequisites
 
-- Python 3.11 trở lên.
-- Node.js 22 trở lên và npm.
-- Docker Desktop hoặc Docker Engine với Compose.
-- Jetson Nano chạy L4T phù hợp với phiên bản TensorRT của các engine.
-- PostgreSQL và MQTT broker khi chạy đầy đủ hệ thống.
+- Python 3.11 or later.
+- Node.js 22 or later and npm.
+- Docker Desktop or Docker Engine with Compose.
+- A Jetson Nano image with a TensorRT version compatible with the deployed engines.
+- PostgreSQL and an MQTT broker for the complete stack.
 
-## Bắt đầu nhanh
+## Quick Start
 
-### 1. Cấu hình biến môi trường
+### 1. Configure environment variables
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Điền các giá trị phù hợp trong `.env`, đặc biệt là `DATABASE_URL`, thông tin MQTT và `API_KEY`. Không commit `.env` hoặc secrets vào repository.
+Set appropriate values in `.env`, especially `DATABASE_URL`, MQTT connection settings, and `API_KEY`. Never commit `.env` or other secrets to the repository.
 
-### 2. Chạy backend và database
+### 2. Start the backend and database
 
 ```powershell
 docker compose up --build
 ```
 
-Backend mặc định lắng nghe tại `http://localhost:8000`. Swagger UI có tại `/docs` khi ứng dụng FastAPI đã được triển khai đầy đủ.
+The backend listens on `http://localhost:8000` by default. FastAPI's Swagger UI is available at `/docs` once the application routes are implemented.
 
-### 3. Chạy frontend trong development
+### 3. Start the frontend in development mode
 
 ```powershell
 Set-Location frontend
@@ -78,47 +78,47 @@ npm install
 npm run dev
 ```
 
-### 4. Chạy kiểm tra Python
+### 4. Run Python checks
 
-Từ thư mục gốc repository:
+From the repository root:
 
 ```powershell
 python -m compileall shared edge backend
 python -m pytest
 ```
 
-Các lệnh tiện ích tương đương được khai báo trong `Makefile` (`make test`, `make backend`, `make frontend`) trên môi trường có GNU Make.
+Equivalent convenience commands are defined in the `Makefile` (`make test`, `make backend`, and `make frontend`) for environments with GNU Make.
 
-## Triển khai edge
+## Edge Deployment
 
-1. Chuẩn bị ONNX model và build TensorRT engine tương thích với Jetson bằng `edge/scripts/build_engine.py`.
-2. Đặt engine vào `edge/models/` và cập nhật đường dẫn trong `edge/config/edge_config.yaml`.
-3. Kiểm tra camera, MQTT broker, kích thước frame và FPS trong file cấu hình.
-4. Đo latency, memory và power bằng `edge/scripts/benchmark_edge.py`.
-5. Dùng `infra/scripts/setup_jetson.sh` để chuẩn bị máy và `infra/scripts/deploy_edge.sh` để triển khai phiên bản edge.
+1. Prepare an ONNX model and build a Jetson-compatible TensorRT engine with `edge/scripts/build_engine.py`.
+2. Place the engine files in `edge/models/` and update paths in `edge/config/edge_config.yaml`.
+3. Configure the camera, MQTT broker, frame dimensions, and FPS.
+4. Measure latency, memory, and power with `edge/scripts/benchmark_edge.py`.
+5. Use `infra/scripts/setup_jetson.sh` to prepare the device and `infra/scripts/deploy_edge.sh` to deploy the edge service.
 
-Engine TensorRT phụ thuộc phần cứng và phiên bản CUDA/TensorRT; các file `.engine` trong repository chỉ là placeholder, không phải model production.
+TensorRT engines are hardware- and CUDA/TensorRT-version-specific. The `.engine` files currently included in this repository are empty placeholders, not production models.
 
-## Nguyên tắc vận hành
+## Operational Principles
 
-- **Edge-first:** chỉ gửi event và metadata cần thiết; không mặc định truyền toàn bộ video.
-- **Resilient:** dùng local buffer khi mất kết nối và không làm dừng pipeline capture/inference.
-- **Observable:** expose metrics cho Prometheus, ghi structured logs và theo dõi health heartbeat của device.
-- **Secure by default:** dùng API key/JWT ở backend, giới hạn quyền truy cập MQTT và quản lý secrets ngoài source code.
-- **Reproducible:** cố định phiên bản runtime/model trong môi trường triển khai và kiểm thử riêng cho edge, backend, frontend.
+- **Edge-first:** send only required events and metadata; do not transmit full video by default.
+- **Resilient:** use the local buffer during connectivity failures without stopping capture or inference.
+- **Observable:** expose Prometheus metrics, emit structured logs, and monitor device health heartbeats.
+- **Secure by default:** protect backend endpoints with API keys or JWT, restrict MQTT access, and keep secrets outside source control.
+- **Reproducible:** pin runtime and model versions and test edge, backend, and frontend components independently.
 
 ## CI/CD
 
-GitHub Actions trong `.github/workflows/` hiện bao gồm:
+The workflows in `.github/workflows/` currently provide:
 
-- `edge_build.yml`: kiểm tra source edge.
-- `backend_test.yml`: kiểm tra source backend.
-- `frontend_test.yml`: cài dependency và build frontend.
+- `edge_build.yml`: source validation for the edge application.
+- `backend_test.yml`: source validation for the backend.
+- `frontend_test.yml`: dependency installation and frontend build.
 
-## Tài liệu và đóng góp
+## Documentation and Contributing
 
-Đọc thêm trong thư mục [`docs/`](docs/). Khi bổ sung một feature, nên cập nhật đồng thời contract trong `shared/`, test tương ứng, cấu hình mẫu và tài liệu vận hành.
+See the [`docs/`](docs/) directory for project documentation. When adding a feature, update the shared contracts, relevant tests, sample configuration, and operational documentation together.
 
 ## License
 
-Phát hành theo [MIT License](LICENSE).
+Released under the [MIT License](LICENSE).
