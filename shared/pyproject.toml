@@ -1,0 +1,10 @@
+[project]
+name = "edgerareclip-shared"
+version = "0.1.0"
+description = "Shared models and utilities for EdgeRareClip"
+requires-python = ">=3.11"
+dependencies = ["pydantic>=2.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"

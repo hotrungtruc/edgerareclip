@@ -1,0 +1,1 @@
+"""GStreamer/OpenCV camera capture."""

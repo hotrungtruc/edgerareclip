@@ -1,0 +1,14 @@
+name: Edge Build
+
+on:
+  push:
+    paths:
+      - "edge/**"
+      - "shared/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m compileall edge/src

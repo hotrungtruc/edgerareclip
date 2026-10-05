@@ -1,0 +1,14 @@
+camera:
+  device: 0
+  width: 1280
+  height: 720
+  fps: 30
+
+models:
+  backbone: models/edgerareclip_backbone.engine
+  text_encoder: models/text_encoder.engine
+
+mqtt:
+  host: localhost
+  port: 1883
+  topic: edgerareclip/anomalies
